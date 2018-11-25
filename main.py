@@ -60,6 +60,24 @@ def set_input_enabled(enabled):
   global INPUT_DISABLED
   INPUT_DISABLED = not enabled
 
+settings_stack = []
+
+def pushSettings(new_sleep, new_update):
+  global SLEEP_MS
+  global TICKS_BEFORE_UPDATE
+  global sleep_sec
+  settings_stack.append((SLEEP_MS, TICKS_BEFORE_UPDATE))
+  SLEEP_MS = new_sleep
+  TICKS_BEFORE_UPDATE = new_update
+  sleep_sec = SLEEP_MS / 1000.
+
+def popSettings():
+  global SLEEP_MS
+  global TICKS_BEFORE_UPDATE
+  global sleep_sec
+  SLEEP_MS, TICKS_BEFORE_UPDATE = settings_stack.pop()
+  sleep_sec = SLEEP_MS / 1000.
+
 # -----------------------------------------------------------------------------
 
 class Stage():
@@ -123,9 +141,13 @@ class TrafficChartStage(Stage):
       small_font, small_font_size, x=2, y=1)
     backend.drawImage(image)
 
+  def centerButton(self):
+    switch_stage(CubeScreen)
+
 class SplashScreen(Stage):
   def enter(self):
     set_input_enabled(False)
+    self.idx = 0
 
   def update(self):
     image = Image.open('assets/logo.png').convert('1')
@@ -136,6 +158,23 @@ class SplashScreen(Stage):
     set_input_enabled(True)
 
   def tick(self):
+    switch_stage(TrafficChartStage)
+
+class CubeScreen(Stage):
+  def enter(self):
+    self.idx = 0
+    pushSettings(50, 2)
+
+  def leave(self):
+    popSettings()
+
+  def update(self):
+    backend.drawImage(utils.cube.draw(self.idx))
+
+  def tick(self):
+    self.idx = self.idx + 1
+
+  def centerButton(self):
     switch_stage(TrafficChartStage)
 
 # -----------------------------------------------------------------------------
