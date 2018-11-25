@@ -35,18 +35,38 @@ def getPid(name):
 
 def getIpAddress(ifname):
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  return socket.inet_ntoa(fcntl.ioctl(
+  addr = ""
+
+  try:
+    addr = socket.inet_ntoa(fcntl.ioctl(
       s.fileno(),
       0x8915,  # SIOCGIFADDR
       struct.pack('256s', ifname[:15]))[20:24])
+  except IOError:
+    pass
+
+  return addr
 
 def getCpuTemp():
   return int(open('/sys/class/thermal/thermal_zone0/temp').read()) / 1000
 
-def getCpuFreq():
-  with open("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq") as f:
+def _openFreqFile(fname):
+  with open(fname) as f:
     freq = int(f.readlines()[0])/1000
     freqStr = "%d MHz" % freq
     if freq > 1000:
       freqStr = "%.1f GHz" % (float(freq)/1000.0)
     return freqStr
+
+def getCpuFreq():
+  freq = 0
+
+  try:
+    freq = _openFreqFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq")
+  except IOError:
+    try:
+      freq = _openFreqFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+    except IOError:
+      pass
+
+  return freq
