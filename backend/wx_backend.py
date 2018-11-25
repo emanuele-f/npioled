@@ -69,6 +69,7 @@ def drawImage(pil_image):
   #_wximage.SetData(pil_image.convert('1', dither=Image.NONE).convert('RGB').tobytes())
   _wximage.SetData(pil_image.convert('RGB').tobytes())
   _bitmapWidget.SetBitmap(_wximage.ConvertToBitmap())
+  _bitmapWidget.Parent.Update()
 
 def tick():
   # Displatch all the events
